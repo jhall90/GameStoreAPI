@@ -1,0 +1,32 @@
+GET http://localhost:5102/games
+
+# adding 3 #'s separates the requests
+###
+
+GET http://localhost:5102/games/4
+
+###
+# after Content-Type you need to leave a blank space before adding a payload
+POST http://localhost:5102/games
+Content-Type: application/json
+
+{
+    "name": "Minecraft",
+    "genre": "Kids and Family",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+}
+
+###
+PUT http://localhost:5102/games/1
+Content-Type: application/json
+
+{
+    "name": "World of Warcraft: The Burning Crusade",
+    "genre": "MMORPG",
+    "price": 49.99,
+    "releaseDate": "2004-11-14"
+}
+
+###
+DELETE http://localhost:5102/games/2
