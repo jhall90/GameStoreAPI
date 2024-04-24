@@ -2,7 +2,7 @@
 // Records also reduce boilerplate code that classes normally contain
 namespace GameStore.API.DTOs;
 
-public record class GameDTO(
+public record class GameSummaryDTO(
     int Id,
     string Name,
     string Genre,

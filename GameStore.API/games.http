@@ -3,18 +3,48 @@ GET http://localhost:5102/games
 # adding 3 #'s separates the requests
 ###
 
-GET http://localhost:5102/games/4
+GET http://localhost:5102/games/1
 
 ###
 # after Content-Type you need to leave a blank space before adding a payload
 POST http://localhost:5102/games
 Content-Type: application/json
 
+# {
+#     "id": 3,
+#     "name": "FIFA 23",
+#     "genreId": 3,
+#     "price": 69.99,
+#     "releaseDate": "2022-09-27"
+# }
+
+# {
+#     "id": 2,
+#     "name": "Final Fantasy XIV",
+#     "genreId": 5,
+#     "price": 59.99,
+#     "releaseDate": "2010-09-30"
+# }
+
+# {
+#     "name": "World of Warcraft",
+#     "genreId": 1,
+#     "price": 50.00,
+#     "releaseDate": "2004-11-14"
+# }
+
+# {
+#     "name": "Minecraft",
+#     "genreId": 6,
+#     "price": 19.99,
+#     "releaseDate": "2011-11-18"
+# }
+
 {
-    "name": "Minecraft",
-    "genre": "Kids and Family",
-    "price": 19.99,
-    "releaseDate": "2011-11-18"
+    "name": "World of Warcraft: The Burning Crusade222",
+    "genreId": 1,
+    "price": 50.00,
+    "releaseDate": "2007-01-16"
 }
 
 ###
@@ -22,11 +52,11 @@ PUT http://localhost:5102/games/1
 Content-Type: application/json
 
 {
-    "name": "World of Warcraft: The Burning Crusade",
-    "genre": "MMORPG",
+    "name": "World of Warcraft",
+    "genreId": 1,
     "price": 49.99,
     "releaseDate": "2004-11-14"
 }
 
 ###
-DELETE http://localhost:5102/games/2
+DELETE http://localhost:5102/games/6

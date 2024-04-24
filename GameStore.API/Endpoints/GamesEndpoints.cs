@@ -1,4 +1,8 @@
-﻿using GameStore.API.DTOs;
+﻿using GameStore.API.Data;
+using GameStore.API.DTOs;
+using GameStore.API.Entities;
+using GameStore.API.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace GameStore.API.Endpoints;
 
@@ -6,29 +10,30 @@ public static class GamesEndpoints
 {
     const string GetGameEndpointName = "GetGame";
 
-    private static readonly List<GameDTO> games = [
-            new (
-                1,
-                "World of Warcraft",
-                "MMORPG",
-                50.00M,
-                new DateOnly(2004, 11, 14)
-            ),
-            new (
-                2,
-                "Final Fantasy XIV",
-                "RPG",
-                59.99M,
-                new DateOnly(2010, 9, 30)
-            ),
-            new (
-                3,
-                "FIFA 23",
-                "Sports",
-                69.99M,
-                new DateOnly(2022, 9, 27)
-            )
-    ];
+    // Once I had the DB setup I removed the hardcoded list for testing
+    // private static readonly List<GameSummaryDTO> games = [
+    //         new (
+    //             1,
+    //             "World of Warcraft",
+    //             "MMORPG",
+    //             50.00M,
+    //             new DateOnly(2004, 11, 14)
+    //         ),
+    //         new (
+    //             2,
+    //             "Final Fantasy XIV",
+    //             "RPG",
+    //             59.99M,
+    //             new DateOnly(2010, 9, 30)
+    //         ),
+    //         new (
+    //             3,
+    //             "FIFA 23",
+    //             "Sports",
+    //             69.99M,
+    //             new DateOnly(2022, 9, 27)
+    //         )
+    // ];
 
     // adding "this" to the parameters makes this an extension method
     // Creating a RouteGroupBuilder because all the routes below are using games/___
@@ -41,39 +46,55 @@ public static class GamesEndpoints
 
         // minimal API
         // GET /games
-        group.MapGet("/", () => games);
+        // group.MapGet("/", () => games); // pre dbContext
+        group.MapGet("/", (GameStoreContext dbContext) =>
+            dbContext.Games
+                    .Include(game => game.Genre)
+                    .Select(game => game.ToGameSummaryDTO())
+                    .AsNoTracking() // don't need tracking by entity framework of the returned entities, just send them back to the client as this.  Improves performance when multiple entities are being returned
+        );
+
 
         // GET /games/{id}
-        group.MapGet("/{id}", (int id) =>
+        group.MapGet("/{id}", (int id, GameStoreContext dbContext) =>
             {
-                GameDTO? game = games.Find(game => game.Id == id);
+                // GameDTO? game = games.Find(game => game.Id == id); // without dbContext
+                Game? game = dbContext.Games.Find(id);
 
-                return game is null ? Results.NotFound() : Results.Ok(game);
+                return game is null ? Results.NotFound() : Results.Ok(game.ToGameDetailsDTO());
             })
             .WithName(GetGameEndpointName);
 
         // POST /games
-        group.MapPost("/", (CreateGameDTO newGame) =>
+        // adding GameStoreContext dbContext
+        // at runtime asp.core will handle resolving and providing an instance of dbContext
+        group.MapPost("/", (CreateGameDTO newGame, GameStoreContext dbContext) =>
         {
-            GameDTO game = new(
-                games.Count + 1,
-                newGame.Name,
-                newGame.Genre,
-                newGame.Price,
-                newGame.ReleaseDate
-            );
+            //this would be needed before adding the dbContext
+            // GameDTO game = new(
+            //     games.Count + 1,
+            //     newGame.Name,
+            //     newGame.Genre,
+            //     newGame.Price,
+            //     newGame.ReleaseDate
+            // );
+            // games.Add(game);
+            Game game = newGame.ToEntity();
 
-            games.Add(game);
+            dbContext.Games.Add(game);
+            dbContext.SaveChanges();
 
-            return Results.CreatedAtRoute(GetGameEndpointName, new { id = game.Id }, game);
+            // don't return internal entities like "game"
+            // return the Dto instead like "game.ToDTO()" 
+            return Results.CreatedAtRoute(GetGameEndpointName, new { id = game.Id }, game.ToGameDetailsDTO());
         });
 
         // PUT /games
-        group.MapPut("/{id}", (int id, UpdateGameDTO updatedGame) =>
+        group.MapPut("/{id}", (int id, UpdateGameDTO updatedGame, GameStoreContext dbContext) =>
         {
-            var index = games.FindIndex(game => game.Id == id);
+            var existingGame = dbContext.Games.Find(id);
 
-            if (index == -1)
+            if (existingGame is null)
             {
                 // You can also create a record if you want.  Many services do this, but for now I am returning not found.
                 // If you create the record you can run into issues when dealing with databases.  
@@ -81,21 +102,22 @@ public static class GamesEndpoints
                 return Results.NotFound();
             }
 
-            games[index] = new GameDTO(
-                id,
-                updatedGame.Name,
-                updatedGame.Genre,
-                updatedGame.Price,
-                updatedGame.ReleaseDate
-            );
+            dbContext.Entry(existingGame)
+                    .CurrentValues
+                    .SetValues(updatedGame.ToEntity(id));
+
+            dbContext.SaveChanges();
 
             return Results.NoContent(); // For most updates you are just returning no content
         });
 
         // DELETE /games/{id}
-        group.MapDelete("/{id}", (int id) =>
+        group.MapDelete("/{id}", (int id, GameStoreContext dbContext) =>
         {
-            games.RemoveAll(game => game.Id == id);
+            // games.RemoveAll(game => game.Id == id); // pre dbContext
+            dbContext.Games
+                    .Where(game => game.Id == id)
+                    .ExecuteDelete();
 
             return Results.NoContent();
         });
