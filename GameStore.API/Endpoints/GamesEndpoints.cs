@@ -47,19 +47,20 @@ public static class GamesEndpoints
         // minimal API
         // GET /games
         // group.MapGet("/", () => games); // pre dbContext
-        group.MapGet("/", (GameStoreContext dbContext) =>
-            dbContext.Games
+        group.MapGet("/", async (GameStoreContext dbContext) =>
+            await dbContext.Games
                     .Include(game => game.Genre)
                     .Select(game => game.ToGameSummaryDTO())
                     .AsNoTracking() // don't need tracking by entity framework of the returned entities, just send them back to the client as this.  Improves performance when multiple entities are being returned
+                    .ToListAsync()
         );
 
 
         // GET /games/{id}
-        group.MapGet("/{id}", (int id, GameStoreContext dbContext) =>
+        group.MapGet("/{id}", async (int id, GameStoreContext dbContext) =>
             {
                 // GameDTO? game = games.Find(game => game.Id == id); // without dbContext
-                Game? game = dbContext.Games.Find(id);
+                Game? game = await dbContext.Games.FindAsync(id);
 
                 return game is null ? Results.NotFound() : Results.Ok(game.ToGameDetailsDTO());
             })
@@ -68,7 +69,7 @@ public static class GamesEndpoints
         // POST /games
         // adding GameStoreContext dbContext
         // at runtime asp.core will handle resolving and providing an instance of dbContext
-        group.MapPost("/", (CreateGameDTO newGame, GameStoreContext dbContext) =>
+        group.MapPost("/", async (CreateGameDTO newGame, GameStoreContext dbContext) =>
         {
             //this would be needed before adding the dbContext
             // GameDTO game = new(
@@ -82,7 +83,7 @@ public static class GamesEndpoints
             Game game = newGame.ToEntity();
 
             dbContext.Games.Add(game);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
             // don't return internal entities like "game"
             // return the Dto instead like "game.ToDTO()" 
@@ -90,9 +91,9 @@ public static class GamesEndpoints
         });
 
         // PUT /games
-        group.MapPut("/{id}", (int id, UpdateGameDTO updatedGame, GameStoreContext dbContext) =>
+        group.MapPut("/{id}", async (int id, UpdateGameDTO updatedGame, GameStoreContext dbContext) =>
         {
-            var existingGame = dbContext.Games.Find(id);
+            var existingGame = await dbContext.Games.FindAsync(id);
 
             if (existingGame is null)
             {
@@ -106,18 +107,18 @@ public static class GamesEndpoints
                     .CurrentValues
                     .SetValues(updatedGame.ToEntity(id));
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
             return Results.NoContent(); // For most updates you are just returning no content
         });
 
         // DELETE /games/{id}
-        group.MapDelete("/{id}", (int id, GameStoreContext dbContext) =>
+        group.MapDelete("/{id}", async (int id, GameStoreContext dbContext) =>
         {
             // games.RemoveAll(game => game.Id == id); // pre dbContext
-            dbContext.Games
+            await dbContext.Games
                     .Where(game => game.Id == id)
-                    .ExecuteDelete();
+                    .ExecuteDeleteAsync();
 
             return Results.NoContent();
         });

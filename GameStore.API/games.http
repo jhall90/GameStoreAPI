@@ -40,12 +40,12 @@ Content-Type: application/json
 #     "releaseDate": "2011-11-18"
 # }
 
-{
-    "name": "World of Warcraft: The Burning Crusade222",
-    "genreId": 1,
-    "price": 50.00,
-    "releaseDate": "2007-01-16"
-}
+# {
+#     "name": "World of Warcraft: The Burning Crusade",
+#     "genreId": 1,
+#     "price": 50.00,
+#     "releaseDate": "2007-01-16"
+# }
 
 ###
 PUT http://localhost:5102/games/1
