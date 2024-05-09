@@ -47,6 +47,15 @@ public static class GamesEndpoints
         // minimal API
         // GET /games
         // group.MapGet("/", () => games); // pre dbContext
+        // ***** Add this to test slower connections *****
+        // {
+        //     // await Task.Delay(3000); 
+        //     return await dbContext.Games
+        //             .Include(game => game.Genre)
+        //             .Select(game => game.ToGameSummaryDTO())
+        //             .AsNoTracking() // don't need tracking by entity framework of the returned entities, just send them back to the client as this.  Improves performance when multiple entities are being returned
+        //             .ToListAsync();
+        // }
         group.MapGet("/", async (GameStoreContext dbContext) =>
             await dbContext.Games
                     .Include(game => game.Genre)
